@@ -21,7 +21,7 @@ class GenResultTask:
         user_proxy = autogen.UserProxyAgent(
             name="user_proxy",
             human_input_mode="NEVER",
-            max_consecutive_auto_reply=5,
+            max_consecutive_auto_reply=3,
             is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
             code_execution_config={"work_dir": "workspace"},
         )
@@ -35,7 +35,7 @@ class GenResultTask:
                 self.writer.get_agent(),
             ],
             messages=[],
-            max_round=5,
+            max_round=3,
         )
 
         manager = autogen.GroupChatManager(groupchat=group_chat, llm_config=self.coordinator.agent.llm_config)
@@ -45,7 +45,7 @@ class GenResultTask:
         Generate Result Task: {question}
 
         Coordinator, please manage this task:
-        1. Ask the Researcher to gather comprehensive information about {question}
+        1. Based on the comprehensive information, and if necessarily, ask the Researcher to gather more comprehensive information about {question}
         2. Once research is complete, ask the Writer to create the final travel plan
         3. Ensure the final output is a JSON format travel plan with the following structure:
            {{
