@@ -48,10 +48,73 @@ class GenerateTask:
         1. Ask the Researcher to gather information about {question}
         2. Once research is complete, ask the Planner to create a Feasible itinerary planning
         3. Ensure the final output is well-structured and informative
+        4. The final output should be a JSON format travel plan with the structure:
+           {{
+             "answer": {{
+               "question_id": "...",
+               "question": "...",
+               "plan": [...]
+             }}
+           }}
 
         Begin the task coordination now.
         """
 
-        user_proxy.initiate_chat(manager, message=task_message)
-
-        return "Generate task completed"
+        chat_result = user_proxy.initiate_chat(manager, message=task_message)
+        
+        # 尝试从聊天结果中提取生成的行程计划
+        # 方法1: 从最后的消息中提取JSON
+        import json
+        import re
+        
+        result = None
+        
+        # 获取所有消息
+        messages = group_chat.messages if hasattr(group_chat, 'messages') else []
+        if chat_result and hasattr(chat_result, 'chat_history'):
+            messages = chat_result.chat_history
+        
+        # 从后往前查找包含JSON的消息
+        for message in reversed(messages):
+            content = message.get("content", "") if isinstance(message, dict) else str(message)
+            
+            # 尝试提取JSON部分（可能在代码块中）
+            json_pattern = r'\{[\s\S]*"answer"[\s\S]*\}'
+            json_match = re.search(json_pattern, content)
+            
+            if json_match:
+                try:
+                    json_str = json_match.group(0)
+                    result = json.loads(json_str)
+                    if "answer" in result:
+                        return result
+                except json.JSONDecodeError:
+                    continue
+            
+            # 尝试提取markdown代码块中的JSON
+            if "```json" in content or "```" in content:
+                json_start = content.find("```json") if "```json" in content else content.find("```")
+                if json_start != -1:
+                    json_start = content.find("\n", json_start) + 1
+                    json_end = content.find("```", json_start)
+                    if json_end != -1:
+                        try:
+                            json_str = content[json_start:json_end].strip()
+                            result = json.loads(json_str)
+                            if "answer" in result:
+                                return result
+                        except json.JSONDecodeError:
+                            continue
+        
+        # 如果无法提取JSON，返回一个基本的错误结构
+        if result is None:
+            return {
+                "answer": {
+                    "question_id": "",
+                    "question": question,
+                    "plan": [],
+                    "error": "无法从agent对话中提取有效的行程计划JSON"
+                }
+            }
+        
+        return result
