@@ -2,5 +2,7 @@ from .coordinator import CoordinatorAgent
 from .researcher import ResearcherAgent
 
 from .planner import PlannerAgent
+from .feedback import FeedbackAgent
+from .check import CheckAgent
 
-__all__ = ["CoordinatorAgent", "ResearcherAgent", "PlannerAgent"]
+__all__ = ["CoordinatorAgent", "ResearcherAgent", "WriterAgent", "PlannerAgent", "FeedbackAgent", "CheckAgent"]

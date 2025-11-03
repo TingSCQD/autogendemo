@@ -1,7 +1,7 @@
 import autogen
 import sys
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 import pyomo.environ as pyo
 from pyomo.opt import SolverStatus, TerminationCondition
 
@@ -9,7 +9,9 @@ from pyomo.opt import SolverStatus, TerminationCondition
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import AGENT_CONFIG, TRAVEL_API_BASE_URL, TRAVEL_API_TIMEOUT
-from agents.researcher import ResearcherAgent
+
+if TYPE_CHECKING:
+    from agents.researcher import ResearcherAgent
 
 
 class PlannerAgent:
@@ -19,7 +21,6 @@ class PlannerAgent:
     
     def __init__(self):
         self.agent = autogen.AssistantAgent(**AGENT_CONFIG["planner"])
-        self.researcher = ResearcherAgent()
         self.api_timeout = TRAVEL_API_TIMEOUT
         
         # 约束条件常量
@@ -41,18 +42,25 @@ class PlannerAgent:
                 return value if value > 0 else 0.0
         return 0.0
     
-    def fetch_data(self, origin_city: str, destination_city: str) -> Tuple[Dict, Dict, Dict, Dict]:
-        """从 API 获取所需数据"""
-        cross_city_train_departure = self.researcher.get_cross_city_transport(origin_city, destination_city) or []
-        cross_city_train_back = self.researcher.get_cross_city_transport(destination_city, origin_city) or []
+    def fetch_data(self, researcher, origin_city: str, destination_city: str) -> Tuple[Dict, Dict, Dict, Dict]:
+        """
+        从 API 获取所需数据
+        
+        Args:
+            researcher: ResearcherAgent 实例（通过参数传入）
+            origin_city: 出发城市
+            destination_city: 目的地城市
+        """
+        cross_city_train_departure = researcher.get_cross_city_transport(origin_city, destination_city) or []
+        cross_city_train_back = researcher.get_cross_city_transport(destination_city, origin_city) or []
         
         poi_data = {
-            'attractions': self.researcher.get_attractions(destination_city) or [],
-            'accommodations': self.researcher.get_accommodations(destination_city) or [],
-            'restaurants': self.researcher.get_restaurants(destination_city) or []
+            'attractions': researcher.get_attractions(destination_city) or [],
+            'accommodations': researcher.get_accommodations(destination_city) or [],
+            'restaurants': researcher.get_restaurants(destination_city) or []
         }
         
-        intra_city_trans = self.researcher.get_intra_city_transport(destination_city) or {}
+        intra_city_trans = researcher.get_intra_city_transport(destination_city) or {}
         
         return cross_city_train_departure, cross_city_train_back, poi_data, intra_city_trans
     
@@ -520,6 +528,7 @@ class PlannerAgent:
     
     def plan_trip(
         self,
+        researcher,
         origin_city: str,
         destination_city: str,
         travel_days: int,
@@ -531,6 +540,7 @@ class PlannerAgent:
         规划行程
         
         Args:
+            researcher: ResearcherAgent 实例（通过参数传入）
             origin_city: 出发城市
             destination_city: 目的地城市
             travel_days: 旅行天数
@@ -544,7 +554,7 @@ class PlannerAgent:
         # 获取数据
         print(f"正在获取 {destination_city} 的 POI 数据和交通信息...")
         cross_city_train_departure, cross_city_train_back, poi_data, intra_city_trans = self.fetch_data(
-            origin_city, destination_city
+            researcher, origin_city, destination_city
         )
         
         if not poi_data['attractions'] or not poi_data['accommodations'] or not poi_data['restaurants']:
