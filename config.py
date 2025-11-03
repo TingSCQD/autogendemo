@@ -1,24 +1,36 @@
+
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# OpenAI Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable is required")
 
-# AutoGen Configuration
+SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY")
+if not SILICONFLOW_API_KEY:
+    raise ValueError("SILICONFLOW_API_KEY environment variable is required")
+SILICONFLOW_MODEL = os.getenv("SILICONFLOW_MODEL", "Qwen/Qwen3-32B")
+SILICONFLOW_TEMPERATURE = float(os.getenv("SILICONFLOW_TEMPERATURE", "0.7"))
+SILICONFLOW_API_BASE_URL = os.getenv("SILICONFLOW_API_BASE_URL", "https://api.siliconflow.cn/v1")
+
+
 LLM_CONFIG = {
     "config_list": [
         {
-            "model": "gpt-4",
-            "api_key": OPENAI_API_KEY,
+            "model": SILICONFLOW_MODEL,
+            "api_key": SILICONFLOW_API_KEY,
+            "base_url": SILICONFLOW_API_BASE_URL,
         }
     ],
-    "temperature": 0.7,
+    "temperature": SILICONFLOW_TEMPERATURE,
     "timeout": 120,
 }
+
+from autogen import AssistantAgent
+def get_agent():
+    return AssistantAgent(
+        name="siliconflow",
+        llm_config=LLM_CONFIG
+    )
 
 # Agent Configuration
 AGENT_CONFIG = {

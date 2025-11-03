@@ -9,14 +9,14 @@ class ResearchTask:
     
     def execute(self, topic):
         """Execute a research task with agent collaboration"""
-        print(f"\n🔍 Starting Research Task: {topic}")
+        print(f"\n Starting Research Task: {topic}")
         print("=" * 50)
         
         # Create user proxy for interaction
         user_proxy = autogen.UserProxyAgent(
             name="user_proxy",
             human_input_mode="NEVER",
-            max_consecutive_auto_reply=10,
+            max_consecutive_auto_reply=5,
             is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
             code_execution_config={"work_dir": "workspace"},
         )
@@ -30,7 +30,7 @@ class ResearchTask:
                 self.writer.get_agent()
             ],
             messages=[],
-            max_round=15,
+            max_round=5,
         )
         
         manager = autogen.GroupChatManager(groupchat=group_chat, llm_config=self.coordinator.agent.llm_config)
