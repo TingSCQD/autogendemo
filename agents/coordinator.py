@@ -1,7 +1,10 @@
 import autogen
 from config import AGENT_CONFIG
 
+
 class CoordinatorAgent:
+    """协调器 Agent，负责统筹安排各个 agents 完成任务"""
+    
     def __init__(self):
         self.agent = autogen.AssistantAgent(**AGENT_CONFIG["coordinator"])
     
@@ -13,11 +16,7 @@ class CoordinatorAgent:
         message = f"""
         Task Description: {task_description}
         
-        Please coordinate with the available agents to complete this task:
-        - Research Agent: For gathering and analyzing information
-        - Writer Agent: For creating structured content and reports
-        
-        Start by delegating the research phase, then move to content creation.
+        Please coordinate with the available agents to complete this task.
         """
         
         return message
