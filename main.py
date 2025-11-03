@@ -54,16 +54,16 @@ def get_result_task(question):
     print("="*60)
 
 
-    generate_task = GenerateTask()
-    check_task = CheckTask()
+
+
     print(f" Question: {question}")
-    print("\n Starting multi-agent collaboration...")
 
     times = 0
     try:
         for times in range(3):
+            generate_task = GenerateTask()
             temp_plan = generate_task.execute(question)
-            print(f"\n {temp_plan}")
+            check_task = CheckTask()
             check_result = check_task.execute(temp_plan)
             if check_result:
                 print(f"\n {temp_plan}")
@@ -75,31 +75,12 @@ def get_result_task(question):
     except Exception as e:
         print(f"\n Error in research task: {e}")
 
-def evaluate_task(choice):
-    print("\n" + "=" * 60)
-    print("TASK 2: Evaluate the generated results")
-    print("=" * 60)
-
-    research_task = ResearchTask()
-
-
-    print(f" Topic: {topic}")
-    print("\n Starting multi-agent collaboration...")
-    print("Watch how the agents communicate and collaborate:")
-
-    try:
-        result = research_task.execute(topic)
-        print(f"\n {result}")
-    except Exception as e:
-        print(f"\n Error in research task: {e}")
-
 def main():
     if not check_api_key():
         sys.exit(1)
     try:
         choice = input("\nInput the query number : (1-120) ").strip()
         question = get_query(choice)
-
         result = get_result_task(question)
 
     except KeyboardInterrupt:

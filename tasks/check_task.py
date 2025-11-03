@@ -1,15 +1,16 @@
 import autogen
-from agents import CoordinatorAgent, ResearcherAgent
+from agents import CoordinatorAgent, ResearcherAgent, CheckAgent, WriterAgent, FeedbackAgent
 
 
 class CheckTask:
     def __init__(self):
         self.coordinator = CoordinatorAgent()
-        self.researcher = ResearcherAgent()
+        self.check = CheckAgent()
+        self.feedback = FeedbackAgent()
 
 
-    def execute(self, topic):
-        print(f"\n Starting Check Task: {topic}")
+    def execute(self, Itinerary):
+        print(f"\n Starting Check Task")
         print("=" * 50)
 
         # Create user proxy for interaction
@@ -26,7 +27,8 @@ class CheckTask:
             agents=[
                 user_proxy,
                 self.coordinator.get_agent(),
-                self.researcher.get_agent(),
+                self.check.get_agent(),
+                self.feedback.get_agent(),
             ],
             messages=[],
             max_round=5,
@@ -36,16 +38,16 @@ class CheckTask:
 
         # Start the conversation
         task_message = f"""
-        Research Task: {topic}
+        Check Task: 
 
-        Coordinator, please manage this research task:
-        1. Ask the Researcher to gather comprehensive information about {topic}
-        2. Once research is complete, ask the Writer to create a summary report
-        3. Ensure the final output is well-structured and informative
-
+        Coordinator, please manage this check task:
+        1. Ask the check and feedback to  Check the rationality of the following itinerary: {Itinerary}
+        2. If either check or feedback thinks this journey is unreasonable,record the parts they think are unreasonable
+        3. Make sure to obtain check and feedback's common approval before outputting the results
+        4. Return true if the final result is reasonable; otherwise, return false
         Begin the task coordination now.
         """
 
         user_proxy.initiate_chat(manager, message=task_message)
 
-        return "Research task completed"
+        return "Check task completed"

@@ -8,7 +8,7 @@ load_dotenv()
 SILICONFLOW_API_KEY = os.getenv("SILICONFLOW_API_KEY")
 if not SILICONFLOW_API_KEY:
     raise ValueError("SILICONFLOW_API_KEY environment variable is required")
-SILICONFLOW_MODEL = os.getenv("SILICONFLOW_MODEL", "Qwen/Qwen3-32B")
+SILICONFLOW_MODEL = os.getenv("SILICONFLOW_MODEL", "inclusionAI/Ling-flash-2.0")
 SILICONFLOW_TEMPERATURE = float(os.getenv("SILICONFLOW_TEMPERATURE", "0.7"))
 SILICONFLOW_API_BASE_URL = os.getenv("SILICONFLOW_API_BASE_URL", "https://api.siliconflow.cn/v1")
 

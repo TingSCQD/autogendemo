@@ -3,6 +3,11 @@ from agents import CoordinatorAgent, ResearcherAgent, PlannerAgent
 
 
 class GenerateTask:
+    """
+    Generate Task
+    组成：coordinator,researcher,planner
+    描述：调用API搜索信息，然后规划出一份行程
+    """
     def __init__(self):
         self.coordinator = CoordinatorAgent()
         self.researcher = ResearcherAgent()
