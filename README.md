@@ -1,232 +1,186 @@
-# AutoGen Multi-Agent Application Demo
+# 智能旅行规划系统
 
-A comprehensive demonstration of multi-agent collaboration using the AutoGen framework. This project showcases how different AI agents can communicate, coordinate, and collaborate to complete complex tasks.
+基于多智能体协作的智能旅行规划系统，使用 AutoGen 框架实现多智能体协作，通过约束优化生成个性化的旅行计划。
 
-## 🎯 Project Overview
+## 项目结构
 
-This application demonstrates three specialized agents working together:
+```
+autogendemo/
+├── agents/          # 智能体模块
+│   ├── coordinator.py    # 协调器智能体
+│   ├── researcher.py     # 研究者智能体（数据查询）
+│   ├── planner.py        # 规划者智能体（优化求解）
+│   ├── feedback.py       # 反馈智能体（冲突检测）
+│   ├── check.py          # 检查智能体（合理性验证）
+│   ├── writer.py         # 写作者智能体（结果生成）
+│   └── evaluator.py      # 评估器（结果评分）
+├── tasks/           # 任务模块
+│   ├── generate_task.py  # 生成任务
+│   ├── check_task.py     # 检查任务
+│   ├── Gen_result_task.py # 结果生成任务
+│   └── evaluate_task.py  # 评估任务
+├── api/             # API 服务
+│   ├── run_api.py   # API 服务器（Flask）
+│   └── data/        # 数据文件（CSV格式）
+├── prompts/         # 提示词和问题
+│   └── question.json # 问题数据集（1-120）
+├── config.py        # 配置文件
+├── main.py          # 主程序入口
+└── requirements.txt # Python 依赖
 
-- **🤖 Coordinator Agent**: Manages task flow and coordinates between other agents
-- **🔍 Research Agent**: Handles information gathering and analysis tasks  
-- **✍️ Writer Agent**: Responsible for content creation and formatting
+```
 
-## 🚀 Features
-
-- **Multi-Agent Communication**: Agents communicate through structured message passing
-- **Task Coordination**: Coordinator agent manages task delegation and workflow
-- **Specialized Roles**: Each agent has specific capabilities and responsibilities
-- **Real-time Collaboration**: Watch agents collaborate in real-time
-- **Two Demo Tasks**: Research task and report generation task
-
-## 📋 Requirements
+## 环境要求
 
 - Python 3.8+
-- OpenAI API key
-- Internet connection
 
-## 🛠️ Installation
+## 安装步骤
 
-1. **Clone the repository**:
-```bash
-git clone <repository-url>
-cd autogen-multi-agent-demo
-```
+### 1. 安装 Python 依赖
 
-2. **Create virtual environment**:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. **Install dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Configure environment**:
-```bash
-cp .env.example .env
-# Edit .env and add your OpenAI API key
-```
+### 2. 配置环境变量
 
-## ⚙️ Configuration
-
-### Environment Variables
-
-Create a `.env` file with the following:
+创建 `.env` 文件（在项目根目录）：
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+# SiliconFlow API 配置（必需）
+SILICONFLOW_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# 可选配置
+SILICONFLOW_MODEL=Qwen/QwQ-32B
+SILICONFLOW_TEMPERATURE=0.7
+SILICONFLOW_API_BASE_URL=https://api.siliconflow.cn/v1
+
+# 旅行规划 API 服务器配置（默认值）
+TRAVEL_API_BASE_URL=http://localhost:12457
+TRAVEL_API_TIMEOUT=10
 ```
 
-### Agent Configuration
+**重要：** 必须设置 `SILICONFLOW_API_KEY`，否则程序无法运行。
 
-Agents are configured in `config.py` with specific system messages and capabilities:
+## 启动项目
 
-- **Temperature**: 0.7 (balanced creativity and consistency)
-- **Model**: GPT-4 (for best reasoning capabilities)
-- **Timeout**: 120 seconds per request
+### 步骤 1: 启动 API 服务器
 
-## 🎮 Usage
-
-### Basic Usage
-
-Run the main application:
+首先需要启动旅行规划 API 服务器，提供数据查询服务：
 
 ```bash
+cd autogendemo/api
+python run_api.py
+```
+
+API 服务器将在 `http://localhost:12457` 启动。
+
+**注意：** 确保 API 服务器正常运行后再进行下一步。你会看到类似以下输出：
+
+```
+正在加载数据...
+已加载 XXX 条景点数据
+已加载 XXX 条住宿数据
+...
+所有数据加载完成!
+ * Running on http://127.0.0.1:12457
+```
+
+### 步骤 2: 启动主程序
+
+在**新的终端窗口**中，进入项目根目录并运行主程序：
+
+```bash
+cd autogendemo
 python main.py
 ```
 
-### Available Demonstrations
+### 使用方式
 
-1. **Research Task**: Agents collaborate to research a topic
-2. **Report Task**: Agents work together to create a comprehensive report
-3. **Both Tasks**: Complete demonstration of all capabilities
-
-### Example Output
+程序启动后，会提示输入问题编号：
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║              AutoGen Multi-Agent Application                 ║
-║                     Demo Project                             ║
-╚══════════════════════════════════════════════════════════════╝
-
-🎮 Available Demonstrations:
-1. Research Task - Collaborative information gathering
-2. Report Task - Coordinated report generation
-3. Both tasks - Complete demonstration
-
-Select demonstration (1/2/3) or press Enter for both:
+Input the query number (1-120, or press Enter for all): 
 ```
 
-## 🏗️ Project Structure
+**选项 1：处理单个问题**
+- 输入 1-120 之间的数字，例如：`1`
+- 系统将处理该问题并生成旅行计划，然后进行评估
+
+**选项 2：处理所有问题（批量模式）**
+- 直接按回车键（不输入任何内容）
+- 系统将依次处理所有 120 个问题
+- 最后会计算并显示平均得分
+
+## 工作流程
+
+1. **TASK 1: 生成可行结果**
+   - `GenerateTask`: 调用 Researcher 和 Planner 生成初步行程
+   - `CheckTask`: 使用 Check 和 Feedback 验证合理性
+   - `GenResultTask`: 使用 Writer 生成最终 JSON 格式的行程计划
+
+2. **TASK 2: 评估生成的结果**
+   - 评估可执行率 (ER)：检查 JSON 格式是否正确
+   - 评估求解准确率 (AR)：使用 LLM 评估规划合理性
+   - 评估实体覆盖率 (ECR)：计算正确实体的覆盖率
+   - 计算平均推理时间 (ART)：记录全流程运行时间
+   - 计算最终分数：Final Score = ER × (0.7 × AR + 0.3 × ECR)
+
+## 输出示例
+
+### 单个问题评估结果
 
 ```
-autogen-multi-agent-demo/
-├── agents/
-│   ├── __init__.py           # Agent exports
-│   ├── coordinator.py        # Coordinator agent implementation
-│   ├── researcher.py         # Research agent implementation
-│   └── writer.py            # Writer agent implementation
-├── tasks/
-│   ├── __init__.py          # Task exports
-│   ├── research_task.py     # Research task implementation
-│   └── report_task.py       # Report generation task
-├── config.py                # Configuration and settings
-├── main.py                  # Main application entry point
-├── requirements.txt         # Python dependencies
-├── .env.example            # Environment variables template
-└── README.md               # This file
+============================================================
+TASK 2: Evaluate the generated results
+============================================================
+
+------------------------------------------------------------
+评估结果摘要
+------------------------------------------------------------
+
+1. 可执行率(ER): 1.00
+   说明: JSON格式正确
+
+2. 求解准确率(AR): 0.85
+   说明: 规划在预算、时间、路线可达性等方面表现良好...
+
+3. 实体覆盖率(ECR): 0.90
+   attractions: 3/3 (100.00%)
+   restaurants: 8/9 (88.89%)
+   accommodations: 1/1 (100.00%)
+
+4. 平均推理时间(ART): 3.50 分钟
+   ART*评分: 0.60
+
+5. 最终分数(Final Score): 0.8560
+   计算公式: Final Score = ER * (0.7 * AR + 0.3 * ECR)
+   组成: ER=1.00, AR=0.85, ECR=0.90
 ```
 
-## 🔧 Customization
+### 批量评估结果
 
-### Adding New Agents
+```
+批量评估结果摘要
+------------------------------------------------------------
 
-1. Create a new agent class in the `agents/` directory
-2. Configure the agent in `config.py`
-3. Update the `__init__.py` file to export the new agent
+样本数量: 120
 
-### Creating New Tasks
-
-1. Create a new task class in the `tasks/` directory
-2. Implement the `execute()` method
-3. Add the task to the main application menu
-
-### Modifying Agent Behavior
-
-Edit the system messages in `config.py` to change agent behavior:
-
-```python
-AGENT_CONFIG = {
-    "your_agent": {
-        "name": "your_agent",
-        "system_message": "Your custom system message here...",
-        "llm_config": LLM_CONFIG,
-        "human_input_mode": "NEVER",
-    }
-}
+平均指标:
+  平均ER: 0.9500
+  平均AR: 0.8200
+  平均ECR: 0.8500
+  平均ART: 3.25 分钟
+  平均ART*: 0.60
+  平均最终分数: 0.8125
 ```
 
-## 🤝 Agent Communication Flow
+## 评估指标说明
 
-```mermaid
-graph TD
-    A[User Input] --> B[Coordinator Agent]
-    B --> C[Research Agent]
-    B --> D[Writer Agent]
-    C --> B
-    D --> B
-    B --> E[Final Output]
-```
+- **ER (可执行率)**: 评估 JSON 是否可以解析且格式符合要求 (0-1)
+- **AR (求解准确率)**: 使用 LLM 评估规划在预算、时间、路线可达性、地点连贯性上的合理性 (0-1)
+- **ECR (实体覆盖率)**: 结果中正确景点、饭店、住宿的覆盖率 (0-1)
+- **ART (平均推理时间)**: 包含数据处理、模型响应、代码执行、结果评估全流程的运行时间（分钟）
+- **ART\***: 根据 ART 的分段评分函数（<1min: 1.0, 1-5min: 0.6, 5-10min: 0.2, ≥10min: 0.0）
+- **Final Score**: 最终分数 = ER × (0.7 × AR + 0.3 × ECR)
 
-1. **User** provides task description
-2. **Coordinator** analyzes and delegates tasks
-3. **Research Agent** gathers information
-4. **Writer Agent** creates structured content
-5. **Coordinator** coordinates and provides final output
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **API Key Error**:
-   - Ensure your OpenAI API key is correctly set in `.env`
-   - Verify the API key has sufficient credits
-
-2. **Module Import Error**:
-   - Ensure all dependencies are installed: `pip install -r requirements.txt`
-   - Check Python version compatibility (3.8+)
-
-3. **Timeout Issues**:
-   - Increase timeout in `config.py`
-   - Check internet connection stability
-
-### Debug Mode
-
-Enable verbose logging by modifying the `LLM_CONFIG` in `config.py`:
-
-```python
-LLM_CONFIG = {
-    "config_list": [...],
-    "temperature": 0.7,
-    "timeout": 120,
-    "seed": 42,  # For reproducible results
-}
-```
-
-## 📚 Learning Resources
-
-- [AutoGen Documentation](https://microsoft.github.io/autogen/)
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Multi-Agent Systems](https://en.wikipedia.org/wiki/Multi-agent_system)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- [Microsoft AutoGen Team](https://github.com/microsoft/autogen) for the amazing framework
-- [OpenAI](https://openai.com) for providing the language models
-- The open-source community for inspiration and best practices
-
-## 📞 Support
-
-If you encounter any issues or have questions:
-
-1. Check the troubleshooting section above
-2. Review the [AutoGen documentation](https://microsoft.github.io/autogen/)
-3. Open an issue in this repository
-
----
-
-**Happy Coding! 🚀**

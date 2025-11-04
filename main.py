@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from tasks import GenerateTask,GenResultTask,CheckTask,EvaluateTask
-from agents.evaluator import TravelPlanEvaluator
+from agents.evaluator import TravelPlanEvaluator, evaluate_multiple_samples
 
 
 
@@ -17,13 +17,44 @@ def check_api_key():
         return False
     return True
 
+def get_all_queries():
+    """
+    获取所有问题（1-120）
+    
+    Returns:
+        list: [(question_id, question_text, item_dict), ...]
+    """
+    json_path = "prompts/question.json"
+    if not os.path.exists(json_path):
+        print(f"\n Error: 找不到 {json_path} 文件，请确保该文件存在于程序目录中。")
+        sys.exit(1)
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"\n Error: 无法解析 {json_path} 文件，请检查其 JSON 格式是否正确。")
+        print(f" 详细错误信息: {e}")
+        sys.exit(1)
+    
+    queries = []
+    for item in data:
+        question_id = int(item.get("question_id"))
+        if 1 <= question_id <= 120:
+            queries.append((question_id, item.get("question"), item))
+    
+    return sorted(queries, key=lambda x: x[0])
+
+
 def get_query(choice):
     """
     根据用户输入的编号，从 questions.json 文件中获取对应的问题文本和ID。
     如果文件不存在或编号无效，将给出友好的提示。
     
+    Args:
+        choice: 用户输入的编号（字符串，可以为空）
+    
     Returns:
-        tuple: (question_id, question_text) 或 (question_id, question_text, item_dict)
+        tuple: (question_id, question_text, item_dict) 或 None（如果choice为空）
     """
     json_path = "prompts/question.json"
     if not os.path.exists(json_path):
@@ -37,11 +68,15 @@ def get_query(choice):
         print(f" 详细错误信息: {e}")
         sys.exit(1)
 
+    # 如果choice为空，返回None（表示处理所有问题）
+    if not choice or choice.strip() == "":
+        return None
+
     # 支持数字字符串或整数输入
     try:
         question_id = int(choice)
     except ValueError:
-        print("\n Error: 输入的编号无效，请输入数字。")
+        print("\n Error: 输入的编号无效，请输入数字或直接回车（处理所有问题）。")
         sys.exit(1)
 
     # 查找匹配问题
@@ -182,35 +217,114 @@ def main():
     if not check_api_key():
         sys.exit(1)
     try:
-        choice = input("\nInput the query number : (1-120) ").strip()
-        question_id, question, question_item = get_query(choice)
+        choice = input("\nInput the query number (1-120, or press Enter for all): ").strip()
+        query_info = get_query(choice)
         
-        # 记录开始时间
-        start_time = time.time()
-        
-        # 获取结果
-        result = get_result_task(question)
-        
-        # 计算推理时间
-        inference_time_seconds = time.time() - start_time
-        
-        # 评估结果
-        if result:
-            eval_result = evaluate_result(
-                result=result,
-                question_id=str(question_id),
-                question=question,
-                inference_time_seconds=inference_time_seconds
-            )
+        # 如果用户直接回车，处理所有问题
+        if query_info is None:
+            all_queries = get_all_queries()
+            print(f"\n 将处理所有 {len(all_queries)} 个问题（1-120）")
             
-            # 可选：保存评估结果到文件
-            # if eval_result:
-            #     output_file = f"evaluation_result_{question_id}.json"
-            #     with open(output_file, "w", encoding="utf-8") as f:
-            #         json.dump(eval_result, f, ensure_ascii=False, indent=2)
-            #     print(f"\n评估结果已保存到: {output_file}")
+            # 批量处理和评估
+            results = []
+            questions = []
+            question_ids = []
+            inference_times = []
+            
+            for idx, (question_id, question, question_item) in enumerate(all_queries, 1):
+                print(f"\n{'='*60}")
+                print(f"处理问题 {idx}/{len(all_queries)}: Question ID {question_id}")
+                print(f"{'='*60}")
+                
+                # 记录开始时间
+                start_time = time.time()
+                
+                # 获取结果
+                result = get_result_task(question)
+                
+                # 计算推理时间
+                inference_time_seconds = time.time() - start_time
+                
+                if result:
+                    results.append(result)
+                    questions.append(question)
+                    question_ids.append(question_id)
+                    inference_times.append(inference_time_seconds)
+                    print(f"✓ 问题 {question_id} 处理完成，推理时间: {inference_time_seconds:.2f} 秒")
+                else:
+                    print(f"✗ 问题 {question_id} 处理失败")
+            
+            # 批量评估
+            if results:
+                print("\n" + "="*60)
+                print("批量评估所有结果")
+                print("="*60)
+                
+                correct_entities_list = [None] * len(results)  # TODO: 从标准答案中获取
+                
+                batch_eval_result = evaluate_multiple_samples(
+                    results=results,
+                    questions=questions,
+                    correct_entities_list=correct_entities_list,
+                    inference_times=inference_times
+                )
+                
+                # 打印批量评估结果摘要
+                print("\n" + "-" * 60)
+                print("批量评估结果摘要")
+                print("-" * 60)
+                
+                avg_scores = batch_eval_result.get("average_scores", {})
+                print(f"\n样本数量: {batch_eval_result.get('sample_count', 0)}")
+                print(f"\n平均指标:")
+                print(f"  平均ER: {avg_scores.get('er', 0.0):.4f}")
+                print(f"  平均AR: {avg_scores.get('ar', 0.0):.4f}")
+                print(f"  平均ECR: {avg_scores.get('ecr', 0.0):.4f}")
+                if avg_scores.get('art_minutes') is not None:
+                    print(f"  平均ART: {avg_scores.get('art_minutes', 0.0):.2f} 分钟")
+                    print(f"  平均ART*: {avg_scores.get('art_star', 0.0):.2f}")
+                print(f"  平均最终分数: {avg_scores.get('final_score', 0.0):.4f}")
+                
+                print("\n" + "-" * 60)
+                
+                # 可选：保存批量评估结果到文件
+                # output_file = "batch_evaluation_result.json"
+                # with open(output_file, "w", encoding="utf-8") as f:
+                #     json.dump(batch_eval_result, f, ensure_ascii=False, indent=2)
+                # print(f"\n批量评估结果已保存到: {output_file}")
+            else:
+                print("\n 无法进行评估：未生成任何有效结果")
+        
         else:
-            print("\n 无法进行评估：未生成有效结果")
+            # 处理单个问题
+            question_id, question, question_item = query_info
+            
+            # 记录开始时间
+            start_time = time.time()
+            
+            # 获取结果
+            result = get_result_task(question)
+            
+            # 计算推理时间
+            inference_time_seconds = time.time() - start_time
+            
+            # 评估结果
+            if result:
+                eval_result = evaluate_result(
+                    result=result,
+                    question_id=str(question_id),
+                    question=question,
+                    inference_time_seconds=inference_time_seconds
+                )
+                
+                # 可选：保存评估结果到文件
+                # if eval_result:
+                #     output_file = f"evaluation_result_{question_id}.json"
+                #     with open(output_file, "w", encoding="utf-8") as f:
+                #         json.dump(eval_result, f, ensure_ascii=False, indent=2)
+                #     print(f"\n评估结果已保存到: {output_file}")
+            else:
+                print("\n 无法进行评估：未生成有效结果")
         
     except KeyboardInterrupt:
         print("\n\n Application terminated by user")
