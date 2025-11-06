@@ -49,53 +49,94 @@ class GenResultTask:
         2. Once research is complete, ask the Writer to create the final travel plan
         3. Ensure the final output is a JSON format travel plan with the following structure:
            {{
-             "answer": {{
-               "question_id": "...",
-               "question": "...",
-               "plan": [
-                 {{
-                   "date": "YYYY-MM-DD",
-                   "breakfast_id": "...",
-                   "breakfast": "...",
-                   "breakfast_time": "...",
-                   "breakfast_cost": 0.0,
-                   "lunch_id": "...",
-                   "lunch": "...",
-                   "lunch_time": "...",
-                   "lunch_cost": 0.0,
-                   "dinner_id": "...",
-                   "dinner": "...",
-                   "dinner_time": "...",
-                   "dinner_cost": 0.0,
-                   "attraction_id": "...",
-                   "attraction": "...",
-                   "attraction_cost": 0.0,
-                   "accommodation_id": "...",
-                   "accommodation": "...",
-                   "accommodation_cost": 0.0,
-                   "path": [
-                     {{
-                       "ori_id": "...",
-                       "des_id": "...",
-                       "time": 0,
-                       "cost": 0.0
+             "budget": 0.0,
+             "peoples": 0,
+             "travel_days": 0,
+             "origin_city": "...",
+             "destination_city": "...",
+             "start_date": "...",
+             "end_date": "...",
+             "daily_plans": [
+               {{
+                 "date": "YYYY年MM月DD日",
+                 "cost": 0.0,
+                 "cost_time": 0.0,
+                 "hotel": {{
+                   "cost": 0.0,
+                   "feature": "...",
+                   "id": "...",
+                   "name": "...",
+                   "rating": 0.0,
+                   "type": "..."
+                 }},
+                 "attractions": {{
+                   "cost": 0.0,
+                   "duration": 0.0,
+                   "id": "...",
+                   "name": "...",
+                   "rating": 0.0,
+                   "type": "..."
+                 }},
+                 "restaurants": [
+                   {{
+                     "type": "breakfast",
+                     "restaurant": {{
+                       "cost": 0.0,
+                       "duration": 0.0,
+                       "id": "...",
+                       "name": "...",
+                       "queue_time": 0.0,
+                       "rating": 0.0,
+                       "recommended_food": "...",
+                       "type": "..."
                      }}
-                   ]
+                   }},
+                   {{
+                     "type": "lunch",
+                     "restaurant": {{ ... }}
+                   }},
+                   {{
+                     "type": "dinner",
+                     "restaurant": {{ ... }}
+                   }}
+                 ],
+                 "transport": {{
+                   "mode": "public_transport",
+                   "cost": 0.0,
+                   "duration": 0.0
                  }}
-               ],
-               "total_cost": 0.0,
-               "budget": 0.0,
-               "budget_remaining": 0.0,
-               "budget_utilization": 0.0
-             }}
+               }}
+             ],
+             "departure_trains": {{
+               "cost": "0.0",
+               "destination_id": "...",
+               "destination_station": "...",
+               "duration": "0",
+               "origin_id": "...",
+               "origin_station": "...",
+               "train_number": "..."
+             }},
+             "back_trains": {{
+               "cost": "0.0",
+               "destination_id": "...",
+               "destination_station": "...",
+               "duration": "0",
+               "origin_id": "...",
+               "origin_station": "...",
+               "train_number": "..."
+             }},
+             "total_cost": 0.0
            }}
            
         Important notes:
-        - Each day in "plan" should include breakfast, lunch, dinner, attraction, accommodation (except last day), and path information
-        - The "path" array should contain transportation routes between locations
+        - The output should be a direct JSON object (NOT wrapped in an "answer" field)
+        - Each day in "daily_plans" should include hotel (except last day which should be "null"), attractions, restaurants (breakfast, lunch, dinner), and transport information
+        - Hotel on the last day should be the string "null" (not a JSON null)
+        - Dates should be in "YYYY年MM月DD日" format (e.g., "2025年06月10日")
         - All costs should be numeric values (floats)
-        - Dates should be in "YYYY-MM-DD" format
-        - Times should be in "HH:MM" format or minutes (integer)
+        - Train costs and durations should be strings
+        - Restaurant type should be one of: "breakfast", "lunch", "dinner"
+        - Transport mode should be "public_transport" or "taxi"
 
         Begin the task coordination now.
         """
@@ -125,33 +166,38 @@ class GenResultTask:
                         try:
                             json_str = content[json_start:json_end].strip()
                             result = json.loads(json_str)
-                            # 只要存在 "answer" 字段且可解析，就返回
-                            if isinstance(result, dict) and "answer" in result:
+                            # 检查是否包含期望的字段（budget, peoples, travel_days, daily_plans等）
+                            if isinstance(result, dict) and ("daily_plans" in result or "budget" in result):
                                 return result
                         except json.JSONDecodeError:
                             continue
             
-            # 方法2: 尝试从文本中提取包含 "answer" 字段的JSON
-            json_pattern = r'\{[\s\S]*"answer"[\s\S]*\}'
+            # 方法2: 尝试从文本中提取包含 "daily_plans" 或 "budget" 字段的JSON
+            json_pattern = r'\{[\s\S]*"(?:daily_plans|budget)"[\s\S]*\}'
             json_match = re.search(json_pattern, content)
             
             if json_match:
                 try:
                     json_str = json_match.group(0)
                     result = json.loads(json_str)
-                    # 只要存在 "answer" 字段且可解析，就返回
-                    if isinstance(result, dict) and "answer" in result:
+                    # 检查是否包含期望的字段
+                    if isinstance(result, dict) and ("daily_plans" in result or "budget" in result):
                         return result
                 except json.JSONDecodeError:
                     continue
         
-        # 如果无法提取包含 "answer" 字段的JSON，返回一个基本的错误结构
+        # 如果无法提取有效的JSON，返回一个基本的错误结构
         return {
-            "answer": {
-                "question_id": "",
-                "question": question,
-                "plan": [],
-                "total_cost": 0.0,
-                "error": "无法从agent对话中提取有效的行程计划JSON"
-            }
+            "budget": 0.0,
+            "peoples": 0,
+            "travel_days": 0,
+            "origin_city": "",
+            "destination_city": "",
+            "start_date": "",
+            "end_date": "",
+            "daily_plans": [],
+            "departure_trains": {},
+            "back_trains": {},
+            "total_cost": 0.0,
+            "error": "无法从agent对话中提取有效的行程计划JSON"
         }
