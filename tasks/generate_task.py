@@ -42,13 +42,13 @@ class GenerateTask:
 
         # Start the conversation
         task_message = f"""
-        Generate Task: {question}
+        生成任务: {question}
 
-        Coordinator, please manage this Generate task:
-        1. Ask the Researcher to gather information about {question}
-        2. Once research is complete, ask the Planner to create a Feasible itinerary planning
-        3. Ensure the final output is well-structured and informative
-        4. The final output should be a JSON format travel plan with the structure:
+        协调者，请管理此生成任务：
+        1. 要求研究者收集关于 {question} 的信息
+        2. 研究完成后，要求规划者创建一个可行的行程规划
+        3. 确保最终输出结构良好且信息完整
+        4. 最终输出应为JSON格式的行程计划，结构如下：
            {{
              "answer": {{
                "question_id": "...",
@@ -57,7 +57,7 @@ class GenerateTask:
              }}
            }}
 
-        Begin the task coordination now.
+        现在开始任务协调。
         """
 
         chat_result = user_proxy.initiate_chat(manager, message=task_message)

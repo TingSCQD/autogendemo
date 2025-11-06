@@ -42,12 +42,12 @@ class GenResultTask:
 
         # Start the conversation
         task_message = f"""
-        Generate Result Task: {question}
+        生成结果任务: {question}
 
-        Coordinator, please manage this task:
-        1. Based on the comprehensive information, and if necessarily, ask the Researcher to gather more comprehensive information about {question}
-        2. Once research is complete, ask the Writer to create the final travel plan
-        3. Ensure the final output is a JSON format travel plan with the following structure:
+        协调者，请管理此任务：
+        1. 基于已有信息，如有必要，请要求研究者收集关于 {question} 的更全面信息
+        2. 研究完成后，请要求写作者创建最终的行程计划
+        3. 确保最终输出是符合以下结构的JSON格式行程计划：
            {{
              "budget": 0.0,
              "peoples": 0,
@@ -128,17 +128,17 @@ class GenResultTask:
              "total_cost": 0.0
            }}
            
-        Important notes:
-        - The output should be a direct JSON object (NOT wrapped in an "answer" field)
-        - Each day in "daily_plans" should include hotel (except last day which should be "null"), attractions, restaurants (breakfast, lunch, dinner), and transport information
-        - Hotel on the last day should be the string "null" (not a JSON null)
-        - Dates should be in "YYYY年MM月DD日" format (e.g., "2025年06月10日")
-        - All costs should be numeric values (floats)
-        - Train costs and durations should be strings
-        - Restaurant type should be one of: "breakfast", "lunch", "dinner"
-        - Transport mode should be "public_transport" or "taxi"
+        重要提示：
+        - 输出应该是直接的JSON对象（不要包装在"answer"字段中）
+        - "daily_plans"中的每一天都应包含酒店（最后一天应为字符串"null"）、景点、餐厅（早餐、午餐、晚餐）和交通信息
+        - 最后一天的酒店应为字符串"null"（不是JSON的null值）
+        - 日期格式应为"YYYY年MM月DD日"（例如："2025年06月10日"）
+        - 所有费用应为数值（浮点数）
+        - 火车费用和时长应为字符串类型
+        - 餐厅类型应为："breakfast"、"lunch"或"dinner"之一
+        - 交通方式应为"public_transport"或"taxi"
 
-        Begin the task coordination now.
+        现在开始任务协调。
         """
 
         chat_result = user_proxy.initiate_chat(manager, message=task_message)

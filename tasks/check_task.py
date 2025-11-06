@@ -38,16 +38,16 @@ class CheckTask:
 
         # Start the conversation
         task_message = f"""
-        Check Task: 
+        检查任务: 
 
-        Coordinator, please manage this check task:
-        1. Ask the check and feedback to Check the rationality of the following itinerary: {Itinerary}
-        2. If either check or feedback thinks this journey is unreasonable, record the parts they think are unreasonable
-        3. Make sure to obtain check and feedback's common approval before outputting the results
-        4. Return true if the final result is reasonable; otherwise, return false
-        5. The result should be clearly stated as a boolean value (true/false) or in JSON format:
+        协调者，请管理此检查任务：
+        1. 要求检查者和反馈者检查以下行程的合理性：{Itinerary}
+        2. 如果检查者或反馈者认为此行程不合理，请记录他们认为不合理的部分
+        3. 在输出结果之前，确保获得检查者和反馈者的共同认可
+        4. 如果最终结果合理，返回true；否则返回false
+        5. 结果应明确表示为布尔值（true/false）或JSON格式：
            {{"is_valid": true/false, "errors": [...], "warnings": [...]}}
-        Begin the task coordination now.
+        现在开始任务协调。
         """
 
         chat_result = user_proxy.initiate_chat(manager, message=task_message)

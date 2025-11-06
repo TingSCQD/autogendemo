@@ -14,9 +14,9 @@ class CoordinatorAgent:
     def initiate_task(self, task_description, agents):
         """Initiate a task and coordinate between agents"""
         message = f"""
-        Task Description: {task_description}
+        任务描述: {task_description}
         
-        Please coordinate with the available agents to complete this task.
+        请协调合适的agent完成此任务。
         """
         
         return message
